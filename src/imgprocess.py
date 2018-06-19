@@ -3,7 +3,7 @@ import cv2
 import math
 
 def openimage(img_name):
-    return cv2.imread('/home/chiarotti/Documentos/ImageManipulation/images/'+img_name)
+    return cv2.imread('/home/chiarotti/Documentos/image-processing-filters/images/'+img_name)
 
 def tograyscale(img_src):
     img_blank = np.ones((img_src.shape[0], img_src.shape[1], 1), np.uint8)
@@ -205,3 +205,71 @@ def laplacemask(size):
             laplace.append(-1)
     
     return laplace
+
+def erode(img_src, mode):
+    img_grayscale = tograyscale(img_src)
+    img_blank = np.ones((img_grayscale.shape[0], img_grayscale.shape[1], 1), np.uint8)
+    mask = []
+    if(mode == 1):
+        mask = [1,1,1,1,1,1,1,1,1]
+    elif(mode == 2):
+        mask = [0,1,0,1,1,1,0,1,0]
+
+    for width in range(img_src.shape[0]):
+        for height in range(img_src.shape[1]):
+            pixel_matrix = getNeighbors(width, height, img_src.shape[0], img_src.shape[1], 3)
+            color_matrix = []
+            if([-1, -1] not in pixel_matrix):
+                counter = 0
+                for w,h in pixel_matrix:
+                    if(mask[counter] == 1):
+                        color_matrix.append(img_grayscale[w][h][0])
+                    counter+=1
+
+                img_blank.itemset((width,height,0),min(color_matrix))
+            else:
+                img_blank.itemset((width,height,0),img_grayscale[width][height][0])
+            
+    return img_blank
+
+
+def dilate(img_src, mode):
+    img_grayscale = tograyscale(img_src)
+    img_blank = np.ones((img_grayscale.shape[0], img_grayscale.shape[1], 1), np.uint8)
+    mask = []
+    if(mode == 1):
+        mask = [1,1,1,1,1,1,1,1,1]
+    elif(mode == 2):
+        mask = [0,1,0,1,1,1,0,1,0]
+
+    for width in range(img_src.shape[0]):
+        for height in range(img_src.shape[1]):
+            pixel_matrix = getNeighbors(width, height, img_src.shape[0], img_src.shape[1], 3)
+            color_matrix = []
+            counter = 0
+            for w,h in pixel_matrix:
+                if(mask[counter] == 1 and w != -1 and h != -1):
+                    color_matrix.append(img_grayscale[w][h][0])
+                counter+=1
+            img_blank.itemset((width,height,0),max(color_matrix))
+    return img_blank
+
+def closement(img_src, iterations, mode):
+    modified_img = img_src
+    for num in range(iterations):
+        modified_img = dilate(modified_img, mode)
+
+    for num in range(iterations):
+        modified_img = erode(modified_img, mode)
+
+    return modified_img
+
+def opening(img_src, iterations, mode):
+    modified_img = img_src
+    for num in range(iterations):
+        modified_img = erode(modified_img, mode)
+
+    for num in range(iterations):
+        modified_img = dilate(modified_img, mode)
+
+    return modified_img
